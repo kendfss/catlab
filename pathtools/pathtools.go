@@ -6,10 +6,32 @@ import (
     "log"
     "os"
     "path"
+    "strings"
     
     it"catlab/itertools"
+    et"catlab/errortools"
 )
-
+func Cd(pth string) {
+    err := os.Chdir(pth)
+    et.Assert(err)
+}
+func Pwd() string {
+    home, err := os.Getwd()
+    et.Assert(err)
+    return home
+}
+func ProjDir(pth string) string {
+    pwd, err := os.Getwd()
+    et.Assert(err)
+    pth = strings.Replace(pth, "\\", "/", -1)
+    _, name := path.Split(pth)
+    fmt.Println(name)
+    parts := strings.Split(name, ".")
+    ext := parts[len(parts)-1]
+    name = strings.Join(parts[:len(parts)-1], ".") + "-" + ext
+    new := path.Join(pwd, "cat_maps", name)
+    return NameSpacer(new)
+}
 func Files(root string) []string {
     paths := make([]string, 0)
     for _, name := range Listdir(root) {
@@ -36,18 +58,10 @@ func Folders(root string) []string {
         if err != nil {
             log.Fatal(err)
         }
-        // if !stat.IsDir() || fi.Mode()&fs.ModeSymlink != 0 || {
-        //     continue
-        // }
-        // go it.Merge(&paths, Folders(pth))
-        // if mode:= stat.Mode(); mode.IsDir() {
-        //     go it.Merge(&paths, Folders(pth))
-        // }
         switch mode := stat.Mode(); {
             case mode.IsRegular():
                 continue
             case mode.IsDir():
-            // default:
                 paths = append(paths, pth)
                 go it.Merge(&paths, Folders(pth))
         }
@@ -56,9 +70,7 @@ func Folders(root string) []string {
 }
 func Listdir(pth string) []string {
     files, err := os.ReadDir(pth)
-    if err != nil {
-        log.Fatal(err)
-    }
+    et.Check(err)
     rack := make([]string, 0)
     for _, file := range files {
         rack = append(rack, file.Name())

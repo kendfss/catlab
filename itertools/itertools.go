@@ -5,21 +5,48 @@ import (
 	"fmt"
     "crypto/rand"
     // "math/rand"
+    
+    et"catlab/errortools"
 )
 
 func Randex(length int) int {
-    // bites := make([]byte, len(iterable))
     bites := make([]byte, 1)
     _, err := rand.Read(bites)
-    if err!=nil {
-        panic(fmt.Sprintf("Couldn't generate random number(s):\n\t%s", err))
-    }
-    // return rand.Int() % length
-    // n, err := int(rand.Int(rand.Read, length))
+    et.Assert(err)
     return int(bites[0]) % length
 }
 
-
+func SameImage(slice1, slice2 []uint8) bool {
+    if len(slice1) != len(slice2) {
+        return false
+    }
+    for i, value := range slice1 {
+        if value != slice2[i] {
+            return false
+        }
+    }
+    return true
+}
+func SameImageTensor(slice1, slice2 [][][]uint8) bool {
+    if len(slice1) != len(slice2) {
+        return false
+    }
+    if len(slice1[0]) != len(slice2[0]) {
+        return false
+    }
+    width := len((slice1)[0])
+    height := len(slice1)
+    for y := 0; y < height; y++ {
+        for x := 0; x < width; x++ {
+            c1 := slice1[y][x]
+            c2 := slice2[y][x]
+            if !SameImage(c1, c2) {
+                return false
+            }
+        }
+    }
+    return true
+}
 
 func Merge(receiver *[]string, giver []string) {
     for _, str := range giver {
