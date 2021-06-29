@@ -21,3 +21,4 @@ image*.png
 */cat_maps
 main_*
 _discards_
+.commit

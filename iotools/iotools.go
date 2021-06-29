@@ -3,9 +3,12 @@ package iotools // catlab/iotools
 
 import (
     "fmt"
+    "io"
     "image"
     "image/png"
-    // "image/jpeg"
+    "image/jpeg"
+    "strings"
+    "path"
     "os"
     "os/exec"
     
@@ -23,11 +26,26 @@ import (
 //     }
 //     return opts[ext]
 // }
+func Decoder(handle *os.File) (func(io.Reader) (image.Image, error)) {
+    pth := handle.Name()
+    
+    switch strings.ToLower(path.Ext(pth)) {
+        case ".jpeg":
+            return jpeg.Decode
+        case ".jpg":
+            return jpeg.Decode
+        case ".png":
+            return png.Decode
+        default:
+            panic("Couldn't find an appropriate decoder for this image")
+    }
+}
 func LoadImageFace(filePath string) image.Image {
     f, err := os.Open(filePath)
     defer f.Close()
     et.Assert(err)
-    img, _, err := image.Decode(f)
+    // img, _, err := image.Decode(f)
+    img, err := Decoder(f)(f)
     if err != nil {
         panic(fmt.Sprintf("Couldn't decode image file:\n\t\"%s\"\n%s", filePath, err))
     }
@@ -38,7 +56,8 @@ func LoadImage(filePath string) (*image.NRGBA) {
     f, err := os.Open(filePath)
     defer f.Close()
     et.Assert(err)
-    img, _, err := image.Decode(f)
+    // img, _, err := image.Decode(f)
+    img, err := Decoder(f)(f)
     if err != nil {
         panic(fmt.Sprintf("Couldn't decode image file:\n\t\"%s\"\n%s", filePath, err))
     }
@@ -47,11 +66,6 @@ func LoadImage(filePath string) (*image.NRGBA) {
     out := image.NewNRGBA(img.Bounds())
     for y := 0; y < img.Bounds().Max.Y; y++ {
         for x := 0; x < img.Bounds().Max.X; x++ {
-            // r, g, b, a := img.At(x, y).RGBA()
-            // pix = append(pix, r * a)
-            // pix = append(pix, g * a)
-            // pix = append(pix, b * a)
-            // pix = append(pix, a)
             out.Set(x, y, img.At(x, y))
         }
     }

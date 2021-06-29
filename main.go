@@ -5,7 +5,8 @@ import (
     "image"
     "os"
     "io/fs"
-    // "path"
+    "strings"
+    // "flag"
     
     iot"catlab/iotools"
     it"catlab/itertools"
@@ -148,12 +149,15 @@ func FullArnold(pth string) (string, int) {
     
     home := pt.Pwd()
     proj := pt.ProjDir(pth)
+    proj = strings.Replace(proj, "/", string(os.PathSeparator), -1)
+    // proj := strings.Replace(pt.ProjDir(pth), "\\", "/", -1)
     fmt.Println(proj)
     os.MkdirAll(proj, fs.ModeDir)
     pt.Cd(proj)
     defer pt.Cd(home)
+    iot.RenderPNG(current, width, height)
     
-    var ctr int
+    ctr := 1
     for ; !it.SameImage(current, original.Pix); ctr++ {
         current = CatMapOnce(current, width, height, original.Stride)
         iot.RenderPNG(current, width, height)
@@ -189,9 +193,13 @@ func transferTensor(source, target *[][][]uint8, x, y, width, height int) {
     
     
     (*target)[ny][nx] = []uint8{
-        uint8(A * cell[0]), // post-alpha compensation
-        uint8(A * cell[1]), // post-alpha compensation
-        uint8(A * cell[2]), // post-alpha compensation
+        // uint8(A * cell[0]), // post-alpha compensation
+        uint8(cell[0]), // post-alpha compensation
+        // uint8(A * cell[1]), // post-alpha compensation
+        uint8(cell[1]), // post-alpha compensation
+        // uint8(A * cell[2]), // post-alpha compensation
+        uint8(cell[2]), // post-alpha compensation
+        // uint8(A), // post-alpha compensation
         uint8(A), // post-alpha compensation
     
     }
@@ -202,15 +210,19 @@ func transfer(source, target *[]uint8, x, y, width, height, stride int) {
     ny := (x + y) % height
     ni := ny*stride + 4*nx
     
-    R := (*source)[i]
-    G := (*source)[i+1]
-    B := (*source)[i+2]
-    A := (*source)[i+3]
+    // R := (*source)[i]
+    // G := (*source)[i+1]
+    // B := (*source)[i+2]
+    // A := (*source)[i+3]
     
-    (*target)[ni] = uint8(A * R) // post-alpha compensation
-    (*target)[ni+1] = uint8(A * G) // post-alpha compensation
-    (*target)[ni+2] = uint8(A * B) // post-alpha compensation
-    (*target)[ni+3] = uint8(A) // post-alpha compensation
+    // (*target)[ni] = uint8(A * R) // post-alpha compensation
+    (*target)[ni] = uint8((*source)[i]) // post-alpha compensation
+    // (*target)[ni+1] = uint8(A * G) // post-alpha compensation
+    (*target)[ni+1] = uint8((*source)[i+1]) // post-alpha compensation
+    // (*target)[ni+2] = uint8(A * B) // post-alpha compensation
+    (*target)[ni+2] = uint8((*source)[i+2]) // post-alpha compensation
+    // (*target)[ni+3] = uint8(A) // post-alpha compensation
+    (*target)[ni+3] = uint8((*source)[i+3]) // post-alpha compensation
 }
 
 // func main() {
@@ -247,17 +259,37 @@ func transfer(source, target *[]uint8, x, y, width, height, stride int) {
 //     iot.Pop(dir)
 //     fmt.Println(period)
 // }
+func handle(pth string) {
+    fmt.Println(pth)
+    dir, period := FullArnold(pth)
+    iot.Pop(dir)
+    fmt.Println(period)
+}
 func main() {
     if len(os.Args) != 2 {
         fmt.Println("Usage:\n \t./catlab image_file")
         os.Exit(0)
     }
-    file := os.Args[1]
+    // file := os.Args[1]
     // fmt.Printf("%T", iot.LoadImage(file))
     // fmt.Printf("%T", iot.LoadImage(file).Pix)
     // return
-    fmt.Println(file)
-    dir, period := FullArnold(file)
-    iot.Pop(dir)
-    fmt.Println(period)
+    if len(os.Args[1:]) > 0 {
+        for _, pth := range os.Args[1:] {
+            switch {
+                case pt.IsFile(pth):
+                    handle(pth)
+                case pt.IsDir(pth):
+                    // files := pt.Files(pth)
+                    // pth = files[it.Randex(len(files))]
+                    // handle(pth)
+                    handle(pt.SuitableImage(pth))
+            }
+        }
+        return
+    } 
+    // files := pt.Files(pt.Pwd())
+    // pth = files[it.Randex(len(files))]
+    // handle(pth)
+    handle(pt.SuitableImage(pt.Pwd()))
 }
